@@ -1,0 +1,57 @@
+{
+  "name": "ai-resume-screener",
+  "version": "1.0.0",
+  "description": "End-to-end AI resume screener with ATS optimization",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "db:push": "prisma db push"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VarshithBala7/AI-RESUME-SCREENER.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/VarshithBala7/AI-RESUME-SCREENER/issues"
+  },
+  "homepage": "https://github.com/VarshithBala7/AI-RESUME-SCREENER#readme",
+  "dependencies": {
+    "@next-auth/prisma-adapter": "^1.0.7",
+    "@prisma/client": "^7.5.0",
+    "bcryptjs": "^3.0.3",
+    "clsx": "^2.1.1",
+    "docx": "^9.6.1",
+    "file-saver": "^2.0.5",
+    "html-docx-js": "^0.3.1",
+    "jose": "^6.2.2",
+    "jspdf": "^4.2.1",
+    "mammoth": "^1.12.0",
+    "next": "^16.2.1",
+    "next-auth": "^4.24.13",
+    "nodemailer": "^7.0.13",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^2.4.5",
+    "prisma": "^7.5.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "uuid": "^13.0.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
