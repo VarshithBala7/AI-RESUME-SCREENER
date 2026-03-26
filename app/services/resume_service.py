@@ -162,9 +162,9 @@ def write_pdf(content: str, output_path: Path) -> None:
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_font("Helvetica", size=11)
-    for line in content.splitlines():
-        safe_line = _sanitize_pdf_text(line)
-        pdf.multi_cell(0, 7, safe_line if safe_line else " ")
+    page_width = pdf.w - pdf.l_margin - pdf.r_margin
+    safe_text = _sanitize_pdf_text(content).replace("\t", "    ")
+    pdf.multi_cell(page_width, 7, safe_text if safe_text else " ")
     pdf.output(str(output_path))
 
 
