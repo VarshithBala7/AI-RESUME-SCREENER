@@ -61,6 +61,14 @@ export FACEBOOK_CLIENT_SECRET="..."
 
 If OAuth variables are not set, social login buttons still render but redirect back with a configuration message.
 
+## Cloud Agent Environment
+
+This repository includes `.cursor/environment.json` so Cloud Agents automatically:
+
+- install `python3-venv` (virtualenv support)
+- ensure `python3-pip` is available
+- install Python runtime dependencies from `requirements.txt`
+
 ## Important Note on Email Verification
 
 For local development, the verification code is logged to server logs (stdout).  
