@@ -1,61 +1,40 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/lib/auth";
+import { APP_NAME } from "@/lib/constants";
+import { getAuthSession } from "@/lib/session";
+import { VerifyEmailClient } from "./verify-email-client";
 
 export const metadata: Metadata = {
-  title: "Verify Email | AI Resume Screener",
-  description: "Verify your email with the one-time code",
+  title: `Verify Email | ${APP_NAME}`,
+  description: "Verify your email using the one-time code sent to your inbox",
 };
 
-export default async function VerifyEmailPage() {
-  const session = await getServerSession(authOptions);
-  if (session?.user) {
+type VerifyEmailPageProps = {
+  searchParams: Promise<{ email?: string }>;
+};
+
+export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageProps) {
+  const session = await getAuthSession();
+  if (session?.user?.id) {
     redirect("/dashboard");
   }
 
+  const { email } = await searchParams;
+
   return (
-    <main className="auth-shell">
+    <main className="auth-page">
       <section className="auth-card">
-        <h1>Email verification required</h1>
-        <p>Enter the verification code sent to your email.</p>
-        <VerifyEmailForm />
-        <p className="muted tiny">
-          Didn&apos;t receive a code? <ResendCode />
+        <h1>Verify your email</h1>
+        <p className="muted">
+          Enter the 6-digit verification code sent to your email to activate your account.
         </p>
+        <VerifyEmailClient defaultEmail={email} />
         <p className="muted tiny">
-          Go back to <Link href="/signin">Sign in</Link>.
+          Already verified? <Link href="/signin">Sign in</Link>.
         </p>
       </section>
     </main>
-  );
-}
-
-function VerifyEmailForm() {
-  return (
-    <form action="/api/auth/verify-code" method="post" className="form-grid">
-      <label htmlFor="email">Email</label>
-      <input id="email" name="email" type="email" placeholder="you@example.com" required />
-
-      <label htmlFor="code">Verification code</label>
-      <input id="code" name="code" type="text" placeholder="123456" required minLength={6} maxLength={6} />
-
-      <button type="submit" className="primary-button">
-        Verify Email
-      </button>
-    </form>
-  );
-}
-
-function ResendCode() {
-  return (
-    <form action="/api/auth/send-verification" method="post" className="inline-form">
-      <input name="email" type="email" placeholder="you@example.com" required />
-      <button type="submit" className="secondary-button">
-        Resend Code
-      </button>
-    </form>
   );
 }

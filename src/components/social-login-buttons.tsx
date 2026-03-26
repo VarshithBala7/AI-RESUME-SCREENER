@@ -11,7 +11,7 @@ const providers: Array<{ id: Provider; label: string }> = [
   { id: "facebook", label: "Continue with Facebook" },
 ];
 
-export default function SocialLoginButtons() {
+export function SocialLoginButtons() {
   const [pending, setPending] = useState<Provider | null>(null);
 
   return (
@@ -34,3 +34,5 @@ export default function SocialLoginButtons() {
     </div>
   );
 }
+
+export default SocialLoginButtons;

@@ -1,70 +1,84 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
-import { hashPassword } from "@/lib/password";
-import { generateVerificationCode } from "@/lib/utils";
-import { sendVerificationEmail } from "@/lib/mail";
-import { VERIFICATION_CODE_TTL_MINUTES } from "@/lib/constants";
 
-const registerSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
-  confirmPassword: z.string().min(8),
-});
+import { hashPassword } from "@/lib/password";
+import { prisma } from "@/lib/prisma";
+import { createVerificationCode, getVerificationCodeExpiry } from "@/lib/utils";
+import { sendVerificationCodeEmail } from "@/lib/mail";
+
+const registerSchema = z
+  .object({
+    name: z.string().trim().min(2, "Name must be at least 2 characters."),
+    email: z.string().email("Please enter a valid email."),
+    password: z.string().min(8, "Password must be at least 8 characters."),
+    confirmPassword: z.string().min(8, "Confirm password is required."),
+  })
+  .refine((value) => value.password === value.confirmPassword, {
+    message: "Password and confirm password do not match.",
+    path: ["confirmPassword"],
+  });
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const parsed = registerSchema.safeParse(body);
+    const payload = registerSchema.parse(await request.json());
+    const normalizedEmail = payload.email.toLowerCase().trim();
 
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid form data." }, { status: 400 });
-    }
-
-    const { name, email, password, confirmPassword } = parsed.data;
-
-    if (password !== confirmPassword) {
-      return NextResponse.json({ error: "Passwords do not match." }, { status: 400 });
-    }
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+    const existing = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true, emailVerified: true },
     });
 
-    if (existingUser) {
-      return NextResponse.json({ error: "Email is already registered." }, { status: 409 });
+    if (existing?.emailVerified) {
+      return NextResponse.json({ error: "Email is already registered. Please sign in." }, { status: 409 });
     }
 
-    const passwordHash = await hashPassword(password);
+    const passwordHash = await hashPassword(payload.password);
+    const user =
+      existing ??
+      (await prisma.user.create({
+        data: {
+          name: payload.name,
+          email: normalizedEmail,
+          passwordHash,
+        },
+        select: {
+          id: true,
+        },
+      }));
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email: email.toLowerCase(),
-        passwordHash,
-      },
-    });
+    if (existing) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          name: payload.name,
+          passwordHash,
+        },
+      });
+    }
 
-    const code = generateVerificationCode();
-    const expiresAt = new Date(Date.now() + VERIFICATION_CODE_TTL_MINUTES * 60 * 1000);
+    const rawCode = createVerificationCode();
+    const codeHash = await hashPassword(rawCode);
 
-    await prisma.verificationCode.create({
+    await prisma.emailVerificationCode.create({
       data: {
         userId: user.id,
-        code,
-        expiresAt,
+        email: normalizedEmail,
+        codeHash,
+        expiresAt: getVerificationCodeExpiry(),
       },
     });
 
-    await sendVerificationEmail(email, code);
+    await sendVerificationCodeEmail(normalizedEmail, rawCode);
 
     return NextResponse.json({
-      message: "Account created. Verification code sent to your email.",
-      email: user.email,
+      message: "Account created successfully. Verification code sent to email.",
+      email: normalizedEmail,
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Failed to register user." }, { status: 500 });
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.issues[0]?.message ?? "Invalid form values." }, { status: 400 });
+    }
+
+    return NextResponse.json({ error: "Failed to register account." }, { status: 500 });
   }
 }

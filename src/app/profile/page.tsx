@@ -1,17 +1,17 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+
 import { Navbar } from "@/components/navbar";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/session";
 
 export default async function ProfilePage() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userSession = await getCurrentUser();
+  if (!userSession) {
     redirect("/signin");
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: userSession.id },
     select: {
       name: true,
       email: true,
@@ -22,10 +22,10 @@ export default async function ProfilePage() {
   });
 
   return (
-    <div className="container">
+    <div className="container dashboard-shell">
       <Navbar />
-      <h1>Profile</h1>
-      <div className="card">
+      <section className="card panel">
+        <h1>Profile</h1>
         <p>
           <strong>Name:</strong> {user?.name ?? "Not set"}
         </p>
@@ -42,7 +42,7 @@ export default async function ProfilePage() {
         <p>
           <strong>Resumes analyzed:</strong> {user?.resumes.length ?? 0}
         </p>
-      </div>
+      </section>
     </div>
   );
 }

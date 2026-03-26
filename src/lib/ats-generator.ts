@@ -1,98 +1,80 @@
-import type { AnalysisResult } from "@/lib/keyword-engine";
+import { ATS_TEMPLATE_HINT } from "@/lib/constants";
 
-function section(title: string, body: string): string {
-  return `${title.toUpperCase()}\n${body.trim()}\n`;
-}
-
-function bulletify(items: string[]): string {
-  if (!items.length) {
-    return "-";
-  }
-
-  return items.map((item) => `- ${item}`).join("\n");
-}
-
-function pickInputLines(resumeText: string, maxLines = 12): string[] {
-  return resumeText
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .slice(0, maxLines);
-}
-
-export function generateAtsResumeContent(input: {
-  candidateName?: string;
+type GenerateArgs = {
   resumeText: string;
   jobDescription: string;
-  analysis: AnalysisResult;
-}): string {
-  const { candidateName = "Candidate Name", resumeText, jobDescription, analysis } = input;
-  const date = new Date().toLocaleDateString();
-  const jdSummary = jobDescription
-    .replace(/\s+/g, " ")
-    .slice(0, 360)
-    .trim();
-  const existingHighlights = pickInputLines(resumeText).slice(0, 6);
+  matchedKeywords: string[];
+  missingKeywords: string[];
+  matchScore: number;
+};
 
-  const summary = [
-    `${candidateName} is applying for a role aligned with the provided job description.`,
-    `This ATS-optimized resume targets ${analysis.jdKeywordCount} important terms identified from the job posting.`,
-    `The profile has been rewritten to improve keyword alignment, scannability, and ATS readability.`,
-  ].join(" ");
+const sanitize = (value: string) => value.replace(/\s+/g, " ").trim();
 
-  const keywords = [
-    ...analysis.matchingKeywords,
-    ...analysis.missingKeywords.slice(0, 20),
-  ];
-  const uniqueKeywords = Array.from(new Set(keywords));
+const topLines = (text: string, count = 5): string[] =>
+  text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, count)
+    .map((line) => line.replace(/^[-*•]\s*/, ""));
 
-  const skillsBlock = uniqueKeywords.length
-    ? uniqueKeywords.join(" | ")
-    : "Communication | Problem Solving | Collaboration";
+const bullets = (values: string[]) => values.map((value) => `- ${value}`).join("\n");
 
-  const experienceBullets = [
-    ...existingHighlights.slice(0, 3).map((line) => line.replace(/^[-*•]\s*/, "")),
-    ...analysis.matchingKeywords.slice(0, 3).map((keyword) => `Applied ${keyword} in practical projects to meet business goals.`),
-    ...analysis.missingKeywords
+const section = (title: string, body: string) => `${title.toUpperCase()}\n${body.trim()}\n`;
+
+export function generateAtsResume(args: GenerateArgs): string {
+  const nameGuess = topLines(args.resumeText, 1)[0] || "Candidate Name";
+  const resumeHighlights = topLines(args.resumeText, 6);
+  const jdSnippet = sanitize(args.jobDescription).slice(0, 360);
+
+  const skills = Array.from(
+    new Set([
+      ...args.matchedKeywords.slice(0, 20),
+      ...args.missingKeywords.slice(0, 20),
+    ]),
+  );
+
+  const experience = [
+    ...resumeHighlights.slice(0, 3),
+    ...args.matchedKeywords
       .slice(0, 3)
-      .map((keyword) => `Upskilling plan includes ${keyword} to fully align with role requirements.`),
+      .map((keyword) => `Delivered work that demonstrates ${keyword}.`),
+    ...args.missingKeywords
+      .slice(0, 3)
+      .map((keyword) => `Upskilling plan includes ${keyword} to close role gaps.`),
   ].slice(0, 8);
 
-  const projectBullets = [
-    "Built and improved software features using structured problem solving and iterative development.",
-    "Collaborated with peers and stakeholders to convert requirements into implementable deliverables.",
-    "Documented technical decisions and maintained clear, ATS-friendly project narratives.",
-    ...analysis.matchingKeywords.slice(0, 2).map((keyword) => `Demonstrated hands-on ability with ${keyword} in project scenarios.`),
+  const projects = [
+    "Built and improved software features with measurable outcomes.",
+    "Collaborated with peers/stakeholders to convert requirements into deliverables.",
+    "Documented technical implementation clearly for ATS readability.",
+    ...args.matchedKeywords.slice(0, 2).map((keyword) => `Hands-on project exposure with ${keyword}.`),
   ];
 
-  const educationBullets = [
-    "Bachelor's Degree or equivalent (update with your actual institution and dates).",
-    "Relevant coursework aligned with this target role.",
-  ];
+  const summary = [
+    "ATS-optimized resume aligned to the uploaded job description.",
+    `Current alignment score: ${args.matchScore}%.`,
+    "Resume rewritten using simple sections, keyword alignment, and scan-friendly formatting.",
+  ].join(" ");
 
-  const certificationsBullets = analysis.missingKeywords
-    .slice(0, 4)
-    .map((keyword) => `${keyword} - planned certification / structured training`);
+  const atsNotes = [
+    `Matched keywords: ${args.matchedKeywords.length}`,
+    `Missing keywords addressed: ${args.missingKeywords.length}`,
+    `Target job snapshot: ${jdSnippet || "Add concise role summary here."}`,
+  ].join("\n");
 
-  const sections = [
-    `${candidateName}\nEmail: your-email@example.com | Phone: +1-000-000-0000 | Location: Your City\nDate: ${date}\n`,
+  return [
+    `${nameGuess}\nEmail: your-email@example.com | Phone: +1-000-000-0000 | Location: Your City\n`,
     section("Professional Summary", summary),
-    section("Core Skills", skillsBlock),
-    section("Professional Experience", bulletify(experienceBullets)),
-    section("Projects", bulletify(projectBullets)),
-    section("Education", bulletify(educationBullets)),
-    section("Certifications", bulletify(certificationsBullets)),
-    section("Target Job Snapshot", jdSummary || "Add the key target role description here."),
-    section(
-      "ATS Optimization Notes",
-      [
-        `Current match score before rewrite: ${analysis.matchPercentage}%`,
-        `Matched keywords: ${analysis.matchingKeywords.length}`,
-        `Missing keywords addressed in this rewrite: ${analysis.missingKeywords.length}`,
-      ].join("\n"),
-    ),
-  ];
-
-  return sections.join("\n").trim();
+    section("Core Skills", skills.length ? skills.join(" | ") : "Communication | Problem Solving | Collaboration"),
+    section("Professional Experience", bullets(experience.length ? experience : ["Add role achievements with metrics."])),
+    section("Projects", bullets(projects)),
+    section("Education", bullets(["Bachelor's Degree (or equivalent) - add your institution and dates."])),
+    section("Certifications", bullets(args.missingKeywords.slice(0, 4).map((item) => `${item} - planned certification`))),
+    section("ATS Optimization Notes", atsNotes),
+    section("Formatting Guidance", ATS_TEMPLATE_HINT),
+  ]
+    .join("\n")
+    .trim();
 }
 

@@ -23,23 +23,28 @@ export function SignupForm() {
     }
 
     setIsSubmitting(true);
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, email, password, confirmPassword }),
-    });
-    setIsSubmitting(false);
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password, confirmPassword }),
+      });
 
-    const data = (await response.json()) as { message?: string; error?: string };
+      const data = (await response.json()) as { message?: string; error?: string };
 
-    if (!response.ok) {
-      setError(data.error ?? "Failed to create account.");
-      return;
+      if (!response.ok) {
+        setError(data.error ?? "Failed to create account.");
+        return;
+      }
+
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+    } catch {
+      setError("Unable to register now. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    router.push(`/verify-email?email=${encodeURIComponent(email)}`);
   };
 
   return (
@@ -96,7 +101,10 @@ export function SignupForm() {
         </button>
       </form>
 
-      <SocialLoginButtons />
+      <div>
+        <p className="muted tiny">Or continue with</p>
+        <SocialLoginButtons />
+      </div>
     </div>
   );
 }

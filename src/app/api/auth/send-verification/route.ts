@@ -1,52 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
-import { createVerificationCode, getVerificationCodeExpiry } from "@/lib/utils";
-import { sendVerificationEmail } from "@/lib/mail";
 
-const schema = z.object({
-  email: z.email(),
+import { sendVerificationCodeEmail } from "@/lib/mail";
+import { prisma } from "@/lib/prisma";
+import { createEmailVerificationCodeRecord } from "@/lib/email-code";
+
+const requestSchema = z.object({
+  email: z.string().email(),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const body = schema.parse(await req.json());
-    const existing = await prisma.user.findUnique({
-      where: { email: body.email.toLowerCase() },
+    const parsed = requestSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid email." },
+        { status: 400 },
+      );
+    }
+
+    const email = parsed.data.email.trim().toLowerCase();
+    const user = await prisma.user.findUnique({
+      where: { email },
       select: { id: true, emailVerified: true },
     });
 
-    if (existing?.emailVerified) {
+    if (!user) {
+      return NextResponse.json({ error: "No account found for this email." }, { status: 404 });
+    }
+
+    if (user.emailVerified) {
       return NextResponse.json(
-        { error: "This email is already verified. Please sign in." },
+        { error: "Email is already verified. Please sign in." },
         { status: 409 },
       );
     }
 
-    const code = createVerificationCode();
-    const expiresAt = getVerificationCodeExpiry();
+    const plainCode = await createEmailVerificationCodeRecord(user.id, email);
 
-    await prisma.emailVerificationCode.upsert({
-      where: { email: body.email.toLowerCase() },
-      update: {
-        code,
-        expiresAt,
-      },
-      create: {
-        email: body.email.toLowerCase(),
-        code,
-        expiresAt,
-      },
+    await sendVerificationCodeEmail(email, plainCode);
+
+    return NextResponse.json({
+      message: "Verification code sent.",
+      email,
     });
-
-    await sendVerificationEmail(body.email, code);
-
-    return NextResponse.json({ ok: true });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.issues[0]?.message }, { status: 400 });
-    }
-    console.error("send-verification error:", error);
+    console.error("send verification error", error);
     return NextResponse.json({ error: "Failed to send verification code." }, { status: 500 });
   }
 }

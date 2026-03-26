@@ -1,23 +1,24 @@
-import { getServerAuthSession } from "@/lib/session";
 import { redirect } from "next/navigation";
+import { getAuthSession } from "@/lib/session";
+import { Navbar } from "@/components/navbar";
 
 export default async function SettingsPage() {
-  const session = await getServerAuthSession();
-  if (!session?.user) {
-    redirect("/signin");
-  }
+  const session = await getAuthSession();
+  if (!session?.user?.id) redirect("/signin");
 
   return (
-    <main className="container">
-      <section className="card">
-        <h1>Settings</h1>
-        <p className="subtle">
-          Configure account preferences, notification options, and integrations.
+    <main className="container app-shell">
+      <Navbar />
+      <section className="card content-pane">
+        <h1 className="section-title">Settings</h1>
+        <p className="muted-text">
+          Manage account preferences. This starter includes secure authentication and verified
+          email, and can be extended with additional controls.
         </p>
-        <ul className="bullet-list">
-          <li>Enable/disable email notifications</li>
-          <li>Manage connected social providers</li>
-          <li>Update password and security options</li>
+        <ul>
+          <li>Notification preferences (placeholder)</li>
+          <li>Connected social providers overview</li>
+          <li>Password and security settings</li>
         </ul>
       </section>
     </main>

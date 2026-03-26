@@ -1,17 +1,17 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/session";
+import { getAuthSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import DashboardClient from "./dashboard-client";
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser();
-  if (!user) {
+  const session = await getAuthSession();
+  if (!session?.user?.id) {
     redirect("/signin");
   }
 
-  const resumes = await prisma.resumeAnalysis.findMany({
+  const resumes = await prisma.resumeRecord.findMany({
     where: {
-      userId: user.id,
+      userId: session.user.id,
     },
     orderBy: {
       createdAt: "desc",
@@ -22,18 +22,19 @@ export default async function DashboardPage() {
   const safeResumes = resumes.map((resume) => ({
     id: resume.id,
     title: resume.title,
-    matchPercentage: resume.matchPercentage,
-    missingKeywords: resume.missingKeywords,
+    originalResumeText: resume.originalResumeText,
+    atsResumeText: resume.atsResumeText,
+    matchScore: resume.matchScore,
+    missingKeywords: resume.missingKeywords as string[],
+    matchedKeywords: resume.matchedKeywords as string[],
     createdAt: resume.createdAt.toISOString(),
-    optimizedResumeText: resume.optimizedResumeText,
-    extractedKeywords: resume.extractedKeywords,
   }));
 
   return (
-    <main className="page-shell">
+    <main className="container">
       <DashboardClient
-        userName={user.name || user.email}
-        userEmail={user.email}
+        userName={session.user.name ?? "User"}
+        userEmail={session.user.email ?? ""}
         initialResumes={safeResumes}
       />
     </main>

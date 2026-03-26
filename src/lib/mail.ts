@@ -7,8 +7,6 @@ const smtpPass = process.env.SMTP_PASS;
 
 export async function sendVerificationCodeEmail(email: string, code: string) {
   if (!smtpHost || !smtpUser || !smtpPass) {
-    // Fallback for local/dev environments without SMTP setup.
-    // Helps developers test quickly while still enforcing OTP flow in UI.
     console.log(`[DEV-OTP] Verification code for ${email}: ${code}`);
     return;
   }

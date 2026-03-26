@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "db:push": "prisma db push"
@@ -25,8 +25,10 @@
   "homepage": "https://github.com/VarshithBala7/AI-RESUME-SCREENER#readme",
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",
+    "@prisma/adapter-better-sqlite3": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.8.0",
     "clsx": "^2.1.1",
     "docx": "^9.6.1",
     "file-saver": "^2.0.5",
@@ -47,6 +49,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "@types/nodemailer": "^7.0.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",

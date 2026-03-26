@@ -108,3 +108,14 @@ export function splitIntoLines(text: string, maxLineLength = 95): string[] {
   if (current) lines.push(current);
   return lines;
 }
+
+export function generateVerificationCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+export const createVerificationCode = generateVerificationCode;
+
+export function getVerificationCodeExpiry(): Date {
+  const ttl = Number(process.env.VERIFICATION_CODE_TTL_MINUTES ?? 10);
+  return new Date(Date.now() + ttl * 60 * 1000);
+}

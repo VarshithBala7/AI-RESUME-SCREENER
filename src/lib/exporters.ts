@@ -94,3 +94,6 @@ export async function generatePdfBuffer(content: string): Promise<Buffer> {
 
   return Buffer.from(await pdf.save());
 }
+
+export const exportAtsAsDocxBuffer = generateDocxBuffer;
+export const exportAtsAsPdfBuffer = generatePdfBuffer;

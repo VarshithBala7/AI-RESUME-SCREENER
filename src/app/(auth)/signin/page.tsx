@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
 import { SignInForm } from "@/components/signin-form";
 import { SocialLoginButtons } from "@/components/social-login-buttons";
-import { auth } from "@/lib/auth";
+import { getAuthSession } from "@/lib/session";
 
 export default async function SignInPage() {
-  const session = await auth();
-  if (session?.user) {
+  const session = await getAuthSession();
+  if (session?.user?.id) {
     redirect("/dashboard");
   }
 

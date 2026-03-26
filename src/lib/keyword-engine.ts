@@ -1,22 +1,25 @@
 import { STOP_WORDS } from "@/lib/constants";
 
 export type MatchResult = {
-  matchPercentage: number;
+  matchScore: number;
   matchedKeywords: string[];
   missingKeywords: string[];
   totalKeywords: number;
 };
 
-const normalize = (text: string): string =>
-  text
+function normalize(text: string): string {
+  return text
     .toLowerCase()
     .replace(/[^\w\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
 
-const tokenize = (text: string): string[] => normalize(text).split(" ").filter(Boolean);
+function tokenize(text: string): string[] {
+  return normalize(text).split(" ").filter(Boolean);
+}
 
-export const extractKeywords = (jobDescription: string): string[] => {
+export function extractKeywords(jobDescription: string): string[] {
   const words = tokenize(jobDescription);
   const frequency = new Map<string, number>();
 
@@ -30,21 +33,21 @@ export const extractKeywords = (jobDescription: string): string[] => {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 60)
     .map(([word]) => word);
-};
+}
 
-const hasKeyword = (resumeNormalized: string, keyword: string): boolean => {
+function hasKeyword(resumeNormalized: string, keyword: string): boolean {
   const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(`\\b${escaped}\\b`, "i");
   return pattern.test(resumeNormalized);
-};
+}
 
-export const calculateMatch = (jobDescription: string, resumeText: string): MatchResult => {
+export function scoreResumeAgainstJD(resumeText: string, jobDescription: string): MatchResult {
   const jdKeywords = extractKeywords(jobDescription);
   const resumeNormalized = normalize(resumeText);
 
   if (jdKeywords.length === 0) {
     return {
-      matchPercentage: 0,
+      matchScore: 0,
       matchedKeywords: [],
       missingKeywords: [],
       totalKeywords: 0,
@@ -62,12 +65,12 @@ export const calculateMatch = (jobDescription: string, resumeText: string): Matc
     }
   }
 
-  const matchPercentage = Math.round((matchedKeywords.length / jdKeywords.length) * 100);
+  const matchScore = Math.round((matchedKeywords.length / jdKeywords.length) * 100);
   return {
-    matchPercentage,
+    matchScore,
     matchedKeywords,
     missingKeywords,
     totalKeywords: jdKeywords.length,
   };
-};
+}
 
