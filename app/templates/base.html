@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}AI Resume Screener{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="{{ url_for('auth.welcome') }}">AI Resume Screener</a>
+        {% if current_user.is_authenticated %}
+          <nav class="main-nav">
+            <a href="{{ url_for('main.profile') }}">Profile</a>
+            <a href="{{ url_for('main.personal_dashboard') }}">Personal Dashboard</a>
+            <a href="{{ url_for('main.settings') }}">Settings</a>
+            <a href="{{ url_for('main.help_center') }}">Help Center</a>
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+          </nav>
+        {% else %}
+          <nav class="main-nav">
+            <a href="{{ url_for('auth.login') }}">Sign In</a>
+            <a href="{{ url_for('auth.signup') }}">Sign Up</a>
+          </nav>
+        {% endif %}
+      </div>
+    </header>
+
+    <main class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-list">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

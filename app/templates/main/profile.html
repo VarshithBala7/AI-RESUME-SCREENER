@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Profile | AI Resume Screener{% endblock %}
+{% block content %}
+  <section class="card auth-card">
+    <h2>Profile</h2>
+    <form method="post" class="form-grid">
+      <label>
+        Full Name
+        <input type="text" name="full_name" value="{{ current_user.full_name }}" required />
+      </label>
+      <label>
+        Email
+        <input type="email" value="{{ current_user.email }}" disabled />
+      </label>
+      <button type="submit" class="btn btn-primary">Update Profile</button>
+    </form>
+  </section>
+{% endblock %}

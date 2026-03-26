@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Sign In | AI Resume Screener{% endblock %}
+{% block content %}
+  <section class="card auth-card">
+    <h2>Sign In</h2>
+    <form method="post" class="form-grid">
+      <label>
+        Email
+        <input type="email" name="email" required />
+      </label>
+      <label>
+        Password
+        <input type="password" name="password" required />
+      </label>
+      <button type="submit" class="btn btn-primary">Sign In</button>
+    </form>
+
+    <div class="oauth-grid">
+      <a class="btn" href="{{ url_for('auth.oauth_login', provider='google') }}">Sign in with Google</a>
+      <a class="btn" href="{{ url_for('auth.oauth_login', provider='microsoft') }}">Sign in with Outlook</a>
+      <a class="btn" href="{{ url_for('auth.oauth_login', provider='facebook') }}">Sign in with Facebook</a>
+    </div>
+
+    <p>
+      New user? <a href="{{ url_for('auth.signup') }}">Create account</a>
+    </p>
+  </section>
+{% endblock %}

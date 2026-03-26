@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | AI Resume Screener{% endblock %}
+{% block content %}
+  <section class="card">
+    <h2>New Resume Analysis</h2>
+    <p>Upload your current resume and paste the target job description.</p>
+    <form method="post" action="{{ url_for('main.analyze_resume') }}" enctype="multipart/form-data" class="form-grid">
+      <label>
+        Job Title (optional)
+        <input type="text" name="job_title" placeholder="Software Engineer" />
+      </label>
+      <label>
+        Upload Resume (PDF, DOCX, TXT)
+        <input type="file" name="resume_file" accept=".pdf,.docx,.txt" required />
+      </label>
+      <label>
+        Upload Job Description File (optional: PDF, DOCX, TXT)
+        <input type="file" name="job_description_file" accept=".pdf,.docx,.txt" />
+      </label>
+      <label>
+        Job Description (paste if you did not upload a file)
+        <textarea name="job_description" rows="10" placeholder="Paste full job description here..."></textarea>
+      </label>
+      <button class="btn btn-primary" type="submit">Analyze and Generate ATS Resume</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Previous Resume Versions</h2>
+    {% if analyses %}
+      <div class="history-list">
+        {% for item in analyses %}
+          <article class="history-item">
+            <h3>{{ item.job_title or "Untitled Role" }}</h3>
+            <p>Match Score: <strong>{{ item.match_percentage }}%</strong></p>
+            <p>Created: {{ item.created_at.strftime("%Y-%m-%d %H:%M") }}</p>
+            <a class="btn" href="{{ url_for('main.analysis_detail', analysis_id=item.id) }}">Preview Details</a>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No analyses yet. Create your first ATS resume above.</p>
+    {% endif %}
+  </section>
+{% endblock %}

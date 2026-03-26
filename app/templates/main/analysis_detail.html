@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Analysis Result | AI Resume Screener{% endblock %}
+{% block content %}
+  <section class="card">
+    <h2>Analysis Result</h2>
+    <p><strong>Role:</strong> {{ analysis.job_title or "Untitled Role" }}</p>
+    <p><strong>Match Percentage:</strong> {{ analysis.match_percentage }}%</p>
+
+    <h3>Missing Keywords</h3>
+    {% if missing_keywords %}
+      <ul>
+        {% for keyword in missing_keywords %}
+          <li>{{ keyword }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No major missing keywords detected.</p>
+    {% endif %}
+
+    <div class="actions">
+      <a class="btn btn-primary" href="{{ url_for('main.download_resume', analysis_id=analysis.id, fmt='docx') }}">Download Word</a>
+      <a class="btn btn-primary" href="{{ url_for('main.download_resume', analysis_id=analysis.id, fmt='pdf') }}">Download PDF</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>ATS-Optimized Resume Preview</h3>
+    <pre class="preview">{{ analysis.ats_resume_text }}</pre>
+  </section>
+
+  <section class="card">
+    <h3>Original Resume Extract</h3>
+    <pre class="preview">{{ analysis.original_resume_text }}</pre>
+  </section>
+{% endblock %}

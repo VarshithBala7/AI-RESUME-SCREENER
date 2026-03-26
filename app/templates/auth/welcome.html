@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Welcome | AI Resume Screener{% endblock %}
+{% block content %}
+  <section class="card hero">
+    <h1>Welcome to the AI Resume Screener</h1>
+    <p>
+      Upload your current resume and the job description to get match percentage, missing keywords,
+      and an ATS-optimized resume you can download in PDF or Word.
+    </p>
+    <div class="actions">
+      <a class="btn btn-primary" href="{{ url_for('auth.signup') }}">Sign Up</a>
+      <a class="btn" href="{{ url_for('auth.login') }}">Sign In</a>
+    </div>
+  </section>
+{% endblock %}

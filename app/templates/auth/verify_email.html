@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Verify Email | AI Resume Screener{% endblock %}
+{% block content %}
+  <section class="card auth-card">
+    <h2>Verify Your Email</h2>
+    <p>Enter the 6-digit verification code sent to your email.</p>
+    <form method="post" class="form-grid">
+      <label>
+        Verification Code
+        <input type="text" name="verification_code" maxlength="6" required />
+      </label>
+      <button type="submit" class="btn btn-primary">Verify Email</button>
+    </form>
+    <form method="post" action="{{ url_for('auth.resend_verification') }}">
+      <button type="submit" class="btn">Resend Code</button>
+    </form>
+  </section>
+{% endblock %}
