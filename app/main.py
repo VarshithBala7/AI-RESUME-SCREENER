@@ -18,10 +18,18 @@ from .models import ResumeAnalysis
 from .services.resume_service import (
     calculate_match,
     generate_ats_resume_text,
-    parse_resume_text,
-    save_uploaded_resume,
+    parse_resume_bytes,
     write_docx,
     write_pdf,
+)
+from .services.storage_service import (
+    exists as storage_exists,
+    presigned_download_url,
+    read_bytes,
+    save_generated_file,
+    save_uploaded_file,
+    suffix_for_ref,
+    to_local_path,
 )
 
 main_bp = Blueprint("main", __name__)
@@ -58,8 +66,8 @@ def analyze_resume():
 
     if jd_file and jd_file.filename:
         try:
-            jd_path = save_uploaded_resume(jd_file, current_app.config["UPLOAD_FOLDER"])
-            parsed_jd = parse_resume_text(jd_path).strip()
+            jd_ref = save_uploaded_file(jd_file, "job-descriptions")
+            parsed_jd = parse_resume_bytes(read_bytes(jd_ref), suffix_for_ref(jd_ref)).strip()
             if parsed_jd:
                 job_description = parsed_jd
         except Exception:
@@ -73,10 +81,9 @@ def analyze_resume():
         return redirect(url_for("main.dashboard"))
 
     try:
-        stored_resume_path = save_uploaded_resume(
-            resume_file, current_app.config["UPLOAD_FOLDER"]
-        )
-        original_resume_text = parse_resume_text(stored_resume_path)
+        resume_ref = save_uploaded_file(resume_file, "resumes")
+        resume_bytes = read_bytes(resume_ref)
+        original_resume_text = parse_resume_bytes(resume_bytes, suffix_for_ref(resume_ref))
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("main.dashboard"))
@@ -99,14 +106,16 @@ def analyze_resume():
     pdf_path = Path(current_app.config["GENERATED_FOLDER"]) / f"{basename}.pdf"
     write_docx(ats_resume_text, docx_path)
     write_pdf(ats_resume_text, pdf_path)
+    docx_ref = save_generated_file(docx_path, "generated")
+    pdf_ref = save_generated_file(pdf_path, "generated")
 
     analysis = ResumeAnalysis(
         user_id=current_user.id,
         job_title=job_title,
         match_percentage=match_percentage,
-        resume_path=str(stored_resume_path),
-        generated_docx_path=str(docx_path),
-        generated_pdf_path=str(pdf_path),
+        resume_path=resume_ref,
+        generated_docx_path=docx_ref,
+        generated_pdf_path=pdf_ref,
         missing_keywords=", ".join(missing),
         ats_resume_text=ats_resume_text,
         original_resume_text=original_resume_text,
@@ -145,21 +154,25 @@ def download_resume(analysis_id: int, fmt: str):
     ).first_or_404()
 
     if fmt == "docx":
-        path = Path(analysis.generated_docx_path)
         mimetype = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         filename = f"ats_resume_{analysis.id}.docx"
+        ref = analysis.generated_docx_path
     elif fmt == "pdf":
-        path = Path(analysis.generated_pdf_path)
         mimetype = "application/pdf"
         filename = f"ats_resume_{analysis.id}.pdf"
+        ref = analysis.generated_pdf_path
     else:
         flash("Unsupported format requested.", "error")
         return redirect(url_for("main.analysis_detail", analysis_id=analysis.id))
 
-    if not path.exists():
+    if not storage_exists(ref):
         flash("Requested file is unavailable.", "error")
         return redirect(url_for("main.analysis_detail", analysis_id=analysis.id))
 
+    if ref.startswith("s3://"):
+        return redirect(presigned_download_url(ref, expires_seconds=600))
+
+    path = to_local_path(ref)
     return send_file(path, as_attachment=True, download_name=filename, mimetype=mimetype)
 
 

@@ -9,9 +9,6 @@ from typing import Iterable
 from docx import Document
 from fpdf import FPDF
 from pypdf import PdfReader
-from werkzeug.datastructures import FileStorage
-from werkzeug.utils import secure_filename
-
 STOPWORDS = {
     "the",
     "a",
@@ -48,34 +45,18 @@ STOPWORDS = {
     "experience",
     "years",
 }
-
-
-def save_uploaded_resume(file: FileStorage, upload_folder: str) -> Path:
-    filename = secure_filename(file.filename or "")
-    if not filename:
-        raise ValueError("Resume file name is missing.")
-
-    suffix = Path(filename).suffix.lower()
-    if suffix not in {".pdf", ".docx", ".txt"}:
-        raise ValueError("Unsupported file format. Use PDF, DOCX, or TXT.")
-
-    target = Path(upload_folder) / f"{uuid.uuid4().hex}{suffix}"
-    file.save(target)
-    return target
-
-
-def parse_resume_text(file_path: Path) -> str:
-    suffix = file_path.suffix.lower()
+def parse_resume_bytes(data: bytes, suffix: str) -> str:
+    suffix = suffix.lower()
     if suffix == ".txt":
-        return file_path.read_text(encoding="utf-8", errors="ignore")
+        return data.decode("utf-8", errors="ignore")
     if suffix == ".docx":
-        doc = Document(str(file_path))
+        doc = Document(io.BytesIO(data))
         return "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
     if suffix == ".pdf":
-        reader = PdfReader(str(file_path))
+        reader = PdfReader(io.BytesIO(data))
         pages = [(page.extract_text() or "") for page in reader.pages]
         return "\n".join(pages)
-    raise ValueError("Unsupported file format.")
+    raise ValueError("Unsupported file format. Use PDF, DOCX, or TXT.")
 
 
 def extract_keywords(text: str, limit: int = 40) -> list[str]:
@@ -166,11 +147,6 @@ def write_pdf(content: str, output_path: Path) -> None:
     safe_text = _sanitize_pdf_text(content).replace("\t", "    ")
     pdf.multi_cell(page_width, 7, safe_text if safe_text else " ")
     pdf.output(str(output_path))
-
-
-def write_file_bytes(file_path: Path) -> bytes:
-    with file_path.open("rb") as handle:
-        return handle.read()
 
 
 def _tokenize(text: str) -> list[str]:

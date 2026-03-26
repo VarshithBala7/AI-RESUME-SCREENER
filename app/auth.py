@@ -15,6 +15,7 @@ from flask_login import current_user, login_user, logout_user
 
 from . import db, oauth
 from .models import User
+from .services.email_service import send_verification_code
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -63,8 +64,13 @@ def signup():
         db.session.commit()
 
         session["pending_verification_email"] = email
-        # In production, this should be sent via transactional email provider.
-        current_app.logger.info("Verification code for %s is %s", email, verification_code)
+        sent = send_verification_code(email, verification_code)
+        if not sent:
+            flash(
+                "Account created, but verification email could not be sent. Please use Resend Code.",
+                "error",
+            )
+            return redirect(url_for("auth.verify_email"))
         flash("Account created. Enter the verification code sent to your email.", "success")
         return redirect(url_for("auth.verify_email"))
 
@@ -124,9 +130,10 @@ def resend_verification():
 
     user.verification_code = f"{random.randint(100000, 999999)}"
     db.session.commit()
-    current_app.logger.info(
-        "Resent verification code for %s is %s", user.email, user.verification_code
-    )
+    sent = send_verification_code(user.email, user.verification_code)
+    if not sent:
+        flash("Could not resend verification email. Please try again.", "error")
+        return redirect(url_for("auth.verify_email"))
     flash("A new verification code has been generated.", "success")
     return redirect(url_for("auth.verify_email"))
 

@@ -27,6 +27,15 @@ def create_app() -> Flask:
         GENERATED_FOLDER=os.getenv(
             "GENERATED_FOLDER", str(Path.cwd() / "generated_resumes")
         ),
+        STORAGE_BACKEND=os.getenv("STORAGE_BACKEND", "local"),
+        S3_BUCKET_NAME=os.getenv("S3_BUCKET_NAME"),
+        S3_REGION=os.getenv("S3_REGION"),
+        MAIL_FROM=os.getenv("MAIL_FROM"),
+        MAIL_HOST=os.getenv("MAIL_HOST"),
+        MAIL_PORT=int(os.getenv("MAIL_PORT", "587")),
+        MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
+        MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
+        MAIL_USE_TLS=os.getenv("MAIL_USE_TLS", "true").lower() == "true",
         MAX_CONTENT_LENGTH=10 * 1024 * 1024,
     )
 

@@ -7,3 +7,6 @@ python-docx
 pypdf
 fpdf2
 email-validator
+boto3
+gunicorn
+psycopg2-binary
